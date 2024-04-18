@@ -5,6 +5,7 @@ import(
 	"net/http"
 	"html/template"
 	"os"
+	"server/pkg/file-watcher"
 )
 
 type PageData struct {
@@ -14,6 +15,9 @@ type PageData struct {
 
 
 func main() {
+	// start file watcher for development 
+	go filewatcher.WatchFiles()
+
 	http.HandleFunc("/", handler)
 
 	log.Println("Starting server")
@@ -44,10 +48,6 @@ func handler(w http.ResponseWriter, r *http.Request){
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
-	}
-
-	if err := tmpl.ExecuteTemplate(os.Stdout,pathToIndexHtml, data); err != nil {
-		log.Printf("Error executing template: %v", err)
 	}
 
 	err = tmpl.Execute(w, data)
