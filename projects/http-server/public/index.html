@@ -17,7 +17,15 @@
         <h1 class="text-3xl font-bold underline">
           HTMX + Tailwind With Go Template
         </h1>
-        <h2 class="text-2xl">{{.Message}}</h2>
+        <div id="poke-info" hx-swap="outerHTML"></div>
+        <button
+          class="border-2 border-slate-600 rounded-lg p-2"
+          hx-get="/get-pokemon"
+          hx-target="#poke-info"
+          hx-swap="innerHTML"
+        >
+          Get random pokemon
+        </button>
       </div>
     </main>
   </body>

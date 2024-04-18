@@ -6,12 +6,17 @@ import(
 	"html/template"
 	"os"
 	"server/pkg/file-watcher"
+	"encoding/json"
 )
 
 type PageData struct {
 	Title string
-	Message string
 } 
+
+type PokemonData struct {
+	PokeName string
+	PokeHp string
+}
 
 
 func main() {
@@ -19,6 +24,7 @@ func main() {
 	go filewatcher.WatchFiles()
 
 	http.HandleFunc("/", handler)
+	http.HandleFunc("/get-pokemon", getPokemonHandler)
 
 	log.Println("Starting server")
 	err := http.ListenAndServe(":8080", nil)
@@ -29,10 +35,39 @@ func main() {
 
 }
 
+func getPokemonHandler(w http.ResponseWriter, r *http.Request){
+	pokemon := PokemonData()
+
+	res := map[string]interface{}{
+		"PokeName" : "Pickachu",
+		"PokeHp" : "50",
+	}
+
+	pokemon.PokeHp = res["PokeHp"].(string)
+	pokemon.PokeName = res["PokeName"].(string)
+
+	jsonResponse, err := json.Marshal(pokemon)
+	if err != nil{
+		log.Printf("Error marshaling JSON: %v\n", err)
+		http.Error(w, "Internal server error", http.StatusInternalServerError)
+		return
+	}
+
+	w.Header().Set("Content-type", "application/json")
+
+	_, err = w.Write(jsonResponse)
+	if err != nil {
+		log.Printf("Error writing response: %v\n", err)
+		http.Error(w, "Internal server error", http.StatusInternalServerError)
+		return
+	}
+
+}
+
 func handler(w http.ResponseWriter, r *http.Request){
+
 	data := PageData{
 		Title: "Go Template with HTMX",
-		Message: "Hello from the server",
 	}
 
 	dir, err := os.Getwd()
@@ -41,8 +76,6 @@ func handler(w http.ResponseWriter, r *http.Request){
 	}
 
 	pathToIndexHtml := dir + "/public/index.html"
-
-	log.Println("Current working directory:", pathToIndexHtml)
 
 	tmpl, err := template.ParseFiles(pathToIndexHtml)
 	if err != nil {
