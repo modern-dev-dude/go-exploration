@@ -67,12 +67,13 @@ func main() {
 
 func getPokemonHandler(w http.ResponseWriter, r *http.Request){
 	// generate random idx
-	randIdx := strconv.Itoa(rand.IntN(5))
+	// add one to not get zero index
+	randIdx := strconv.Itoa(rand.IntN(151) + 1 )
 	randPokeUrl := getPokemonByIdxUrl + randIdx
 	log.Println(randPokeUrl)
 
 	// check cache for data 
-	_, found := pokeCache.Get(randIdx)
+	value, found := pokeCache.Get(randIdx)
 
 	if found {
 		log.Println("Cache hit on idx " + randIdx)
@@ -98,10 +99,10 @@ func getPokemonHandler(w http.ResponseWriter, r *http.Request){
 		// set cache to one week 
 		log.Println("Set cache on idx " + randIdx)
 		pokeCache.Set(randIdx, responseData, 24 * 7 * time.Hour)
+
+		value = responseData
 	}
 
-	// check cache for data 
-	value, _ = pokeCache.Get(randIdx)
 	
 
 	var pokemonData Pokemon
