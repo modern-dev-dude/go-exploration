@@ -1,16 +1,18 @@
 package main
 
-import(
-	"log"
-	"net/http"
-	"html/template"
-	"os"
-	"server/pkg/file-watcher"
+import (
 	"encoding/json"
-	"math/rand/v2"
-	"strconv"
+	"html/template"
 	"io/ioutil"
+	"log"
+	"math/rand/v2"
+	"net/http"
+	"os"
+	filewatcher "server/pkg/file-watcher"
+	InMemoryCache "server/pkg/in-memory-cache"
+	"strconv"
 	"strings"
+	"time"
 )
 
 type PageData struct {
@@ -40,10 +42,14 @@ type Pokemon struct {
 	} `json:"cries"`
 }
 
-var getPokimonByIdxUrl string = "https://pokeapi.co/api/v2/pokemon/"
+var getPokemonByIdxUrl string = "https://pokeapi.co/api/v2/pokemon/"
 
+// set up in mem cache to reduce the load on the api
+var pokeCache = InMemoryCache.New[string, []byte]()
 
 func main() {
+
+
 	// start file watcher for development 
 	go filewatcher.WatchFiles()
 
@@ -60,29 +66,46 @@ func main() {
 }
 
 func getPokemonHandler(w http.ResponseWriter, r *http.Request){
-
 	// generate random idx
-
-	randPokeUrl := getPokimonByIdxUrl + strconv.Itoa(rand.IntN(152))
+	randIdx := strconv.Itoa(rand.IntN(5))
+	randPokeUrl := getPokemonByIdxUrl + randIdx
 	log.Println(randPokeUrl)
 
-	res, err := http.Get(randPokeUrl)
+	// check cache for data 
+	_, found := pokeCache.Get(randIdx)
 
-	if err != nil {
-		log.Printf("Error getting pokemon: %v\n", err)
-		http.Error(w, "Internal server error", http.StatusInternalServerError)
-		return
+	if found {
+		log.Println("Cache hit on idx " + randIdx)
 	}
 
-	responseData, err := ioutil.ReadAll(res.Body)
-	if err != nil {
-		log.Printf("Error reading pokemon response: %v\n", err)
-		http.Error(w, "Internal server error", http.StatusInternalServerError)
-		return
+	if !found {
+
+		log.Println("Cache miss on idx " + randIdx)
+		res, err := http.Get(randPokeUrl)
+		if err != nil {
+			log.Printf("Error getting pokemon: %v\n", err)
+			http.Error(w, "Internal server error", http.StatusInternalServerError)
+			return
+		}
+
+		responseData, err := ioutil.ReadAll(res.Body)
+		if err != nil {
+			log.Printf("Error reading pokemon response: %v\n", err)
+			http.Error(w, "Internal server error", http.StatusInternalServerError)
+			return
+		}
+
+		// set cache to one week 
+		log.Println("Set cache on idx " + randIdx)
+		pokeCache.Set(randIdx, responseData, 24 * 7 * time.Hour)
 	}
+
+	// check cache for data 
+	value, _ = pokeCache.Get(randIdx)
+	
 
 	var pokemonData Pokemon
-	json.Unmarshal(responseData, &pokemonData)
+	json.Unmarshal(value, &pokemonData)
 	pokemon := PokemonData{
 		strings.Title(pokemonData.Name), 
 		pokemonData.Sprites.FrontDefault, 
