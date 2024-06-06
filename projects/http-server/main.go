@@ -68,7 +68,7 @@ func main() {
 func getPokemonHandler(w http.ResponseWriter, r *http.Request){
 	// generate random idx
 	// add one to not get zero index
-	randIdx := strconv.Itoa(rand.IntN(151) + 1 )
+	randIdx := strconv.Itoa(rand.IntN(600) + 1 )
 	randPokeUrl := getPokemonByIdxUrl + randIdx
 	log.Println(randPokeUrl)
 
