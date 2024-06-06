@@ -40,8 +40,8 @@ func main() {
 	decoder := json.NewDecoder(res.Body).Decode(book)
 
 	if decoder != nil {
-		log.Fatal(err)
-		panic(err)
+		log.Fatal(decoder)
+		panic(decoder)
 	}
 
 	if res.StatusCode != http.StatusOK {

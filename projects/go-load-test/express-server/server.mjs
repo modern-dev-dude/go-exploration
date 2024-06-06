@@ -2,13 +2,13 @@ import express from "express";
 
 const bookMap = {
   1: {
-    id: "1",
+    id: 1,
     title: "Harry Potter",
     author: "J.K. Rowling",
     description: "This is a book about a young wizard",
   },
   2: {
-    id: "2",
+    id: 2,
     title: "Game of Thrones",
     author: "George R. R. Martin",
     description: "This is a book about a mid-evil dictator",
